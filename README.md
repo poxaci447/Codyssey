@@ -227,5 +227,7 @@ Volume persist Test
 | --- | --- | --- |
 | 문제 상황 | Docker Desktop 설치 중 `Virtual Machine Platform Windows feature is not enabled` 오류 발생 | `docker build` 실행 시 `dockerfile parse error in line 1: unknown instruction: FROM` 오류 발생 |
 |문제 상황|Docker Desktop 설치 중 `virtual Machine Platfrom Windows feature is not enabled` 오류 발생 | `docker build` 실행 시 `dockerfile parse error on line 1: unknown instruction: FROM` 오류 발생 |
-| 가설 설정 | 윈도우 가상화 기능이 꺼져 있어 WSL2 리눅스 백엔드가 초기화되지 못함 | PowerShell의 `echo >` 리디렉션이 파일을 UTF-16 LE(BOM 포함)로 저장하여 데몬이 첫 줄을 잘 못 읽음 |
-| 원인 확인 | | |
+| 가설 설정 | 윈도우 가상화 기능이 꺼져 있어 WSL2 리눅스 백엔드가 초기화되지 못함 | PowerShell의 `echo >` 리디렉션이 파일을 UTF-16 LE(BOM 포함)로 저장하여 데몬이 첫 줄을 잘 못 읽음 |s
+| 원인 확인 | DISM 기능 조회 결과 `VirtualMachinePlatform` 기능이 비활성화 상태임을 확인 | 파일 헤더에 바이트 순서 표식(BOM, `0xFF 0xFE`)이 붙어 `FROM` 키워드가 깨짐 확인 |
+| 조치 내역 | `dism.exe` 명령어로 VirtualMachinePlatform 기능 활성화 후 윈도우 재부팅 완료| `Set-Content' -path Dockerfile -Value ... -Enconding utf8` 명령어로 BOM 없는 UTF-8 인코딩 파일 재생성 |
+| 최종 결과 | Docker Desktop 엔진 정상 구동 및 WSL 2 Ubuntu 인스턴스 부팅 성공 확인 | Dockerfile 빌드 정상 성공(`Successfully tagged my-custom-nginx:latest`) |
