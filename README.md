@@ -226,3 +226,6 @@ Volume persist Test
 | 단계 | 발생 사례 1(WSL 가상 머신 플랫폼 비활성화) | 발생 사례 2(PowerShell 파일 인코드 BOM 오류) |
 | --- | --- | --- |
 | 문제 상황 | Docker Desktop 설치 중 `Virtual Machine Platform Windows feature is not enabled` 오류 발생 | `docker build` 실행 시 `dockerfile parse error in line 1: unknown instruction: FROM` 오류 발생 |
+|문제 상황|Docker Desktop 설치 중 `virtual Machine Platfrom Windows feature is not enabled` 오류 발생 | `docker build` 실행 시 `dockerfile parse error on line 1: unknown instruction: FROM` 오류 발생 |
+| 가설 설정 | 윈도우 가상화 기능이 꺼져 있어 WSL2 리눅스 백엔드가 초기화되지 못함 | PowerShell의 `echo >` 리디렉션이 파일을 UTF-16 LE(BOM 포함)로 저장하여 데몬이 첫 줄을 잘 못 읽음 |
+| 원인 확인 | | |
