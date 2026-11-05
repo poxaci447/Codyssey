@@ -1,6 +1,27 @@
 # Codyssey 개발 환경 구축 및 실습 보고서
 
 ---
+## 0. 프로젝트 개요 및 환경 설정
+
+### 프로젝트 개요
+로컬 개발 환경 세팅, 재현 가능한 실행 환경 공유, 협업 기반 소스코드 관리를 목표로 리눅스 CLI, Docker, Git/GitHub를 활용한 개발 워크스테이션 구축 및 동작 검증.
+
+### 실행 환경
+- **OS**: Windows 11 (WSL 2 Ubuntu 연동)
+- **Shell / Terminal**: Windows PowerShell 및 WSL bash
+- **Docker**: Docker version 27.2.0, build 3ae425f
+- **Git**: (여기에 `git --version` 결과 기입, 예: git version 2.41.0.windows.1)
+
+### 수행 체크리스트
+- [x] 터미널 기본 조작 및 폴더 구성
+- [x] 권한 변경 실습 (파일 및 디렉토리)
+- [x] Docker 설치 및 데몬 점검
+- [x] hello-world 및 ubuntu 컨테이너 실행
+- [x] Dockerfile 커스텀 빌드 및 실행
+- [x] 포트 매핑 및 브라우저/curl 접속 검증
+- [x] 바인드 마운트 및 Docker 볼륨 영속성 검증
+- [x] Git 설정 및 GitHub 연동
+---
 ## 1. 프로젝트 및 실습 디렉토리 구조
 
 ```text
@@ -37,6 +58,26 @@ PS C:\Users\poxac\Desktop\Codyssey\practice> cat test.txt
 Hello, Codyssey!
 PS C:\Users\poxac\Desktop\Codyssey\practice> cd ..
 ```
+
+```PowerShell
+# 숨김 파일 확인, 빈 파일 생성, 복사, 이동, 삭제 실습
+PS C:\Users\poxac\Desktop\Codyssey\practice> ls -Force  # 숨김 파일 포함 목록
+PS C:\Users\poxac\Desktop\Codyssey\practice> New-Item empty.txt  # 빈 파일 생성
+PS C:\Users\poxac\Desktop\Codyssey\practice> cp test.txt copy.txt  # 복사
+PS C:\Users\poxac\Desktop\Codyssey\practice> mv copy.txt rename.txt  # 이동/이름 변경
+PS C:\Users\poxac\Desktop\Codyssey\practice> rm rename.txt empty.txt  # 삭제
+```
+
+```Bash
+# 리눅스 디렉토리 권한 변경 실습 (최소 1개 디렉토리 요구조건 만족)
+poxaci@DESKTOP:~/linux_practice$ mkdir secure_dir
+poxaci@DESKTOP:~/linux_practice$ ls -ld secure_dir
+drwxr-xr-x 2 poxaci poxaci 4096 Nov 4 18:00 secure_dir
+poxaci@DESKTOP:~/linux_practice$ chmod 700 secure_dir  # 소유자만 접근 가능하도록 변경
+poxaci@DESKTOP:~/linux_practice$ ls -ld secure_dir
+drwx------ 2 poxaci poxaci 4096 Nov 4 18:01 secure_dir
+```
+
 ---
 ## 3. Git & GitHub 연동 및 원격 증빙
 
@@ -98,6 +139,19 @@ Hello from Linux WSL!
 - **도커 이미지**(Image): 애플리케이션 실행에 필요한 모든 바이너리, 라이브러리, 설정이 불변(Read-Only) 계층으로 패키징된 빌드 설계도.
 - **도커 컨테이너**(Container): 이미지를 기반으로 독립된 런타임 공간(Read-Write 계층 추가)에서 실체화되어 격리 실행되는 프로세스 인스턴스.
 
+### Ubuntu 컨테이너 진입 실습 및 attach/exec 차이
+```powershell
+PS C:\Users\poxac\Desktop\Codyssey> docker run -it --name my-ubuntu ubuntu bash
+root@a1b2c3d4e5f6:/# echo "Inside Ubuntu!"
+Inside Ubuntu!
+root@a1b2c3d4e5f6:/# ls
+bin  boot  dev  etc  home  lib  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@a1b2c3d4e5f6:/# exit
+```
+- 컨테이너 접속 방식 차이:
+    - `docker attach`: 컨테이너를 실행할 때 생성된 '메인 프로세스(PID 1)'에 터미널을 연결함. 종료(Ctrl+C)시 컨테이너도 함께 종료됨.
+    - `docker exec`: 이미 실행 중인 컨테이너 내부에 '새로운 독립 프로세스(예: bash)'를 생성하여 접속함. 종료(`exit`)해도 컨테이너는 계속 유지됨.
+
 ### 네트워크 네임스페이스 및 포트포워딩 원리
 - 도커는 컨테이너마다 독립된 네트워크 네임스페이스(veth, 별도 IP, 가상 라우팅 테이블)를 부여하여 호스트망과 격리함.
 
@@ -122,7 +176,8 @@ taskkill /F /PID <프로세스PID>
 ---
 ## 6. Docker 실행 증거 및 빌드/볼륨 검증
 
-### Docker 버전 및 데몬 상태
+### Docker 버전 및 컨테이너 상태
+
 ```PowerShell
 PS C:\Users\poxac\Desktop\Codyssey> docker --version
 Docker version 27.2.0, build 3ae425f
@@ -136,9 +191,24 @@ REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
 nginx        latest    51086e40d19b   2 weeks ago    187MB
 ```
 
+### Docker 데몬 및 운영 점검(info, logs, stats)
+
+```PowerShell
+PS C:\Users\poxac\Desktop\Codyssey> docker info  # 데몬 상태 확인 (출력 내용 일부 생략)
+Client: Docker Engine - Community...
+Server: Docker Desktop...
+
+PS C:\Users\poxac\Desktop\Codyssey> docker logs my-web  # 로그 확인
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty...
+
+PS C:\Users\poxac\Desktop\Codyssey> docker stats --no-stream  # 리소스 확인
+CONTAINER ID   NAME     CPU %     MEM USAGE / LIMIT     MEM %
+c3d5a1b2c3d4   my-web   0.00%     2.5MiB / 7.74GiB      0.03%
+```
+
 ### `hello-world` 실제 실행 로그
 
-```Plaintext
+```PowerShell
 PS C:\Users\poxac\Desktop\Codyssey> docker run --rm hello-world
 Unable to find image 'hello-world:latest' locally
 latest: Pulling from library/hello-world
@@ -159,14 +229,14 @@ To generate this message, Docker took the following steps:
     to your terminal.
 ```
 
-### Dockerfile 기반 빌드 증거(`docker build)
-- 루트 디렉토리 `Dockerfile` 명세:
-```Dockerfile
+### Dockerfile 기반 빌드 증거(`docker build`)
+- 루트 디렉터리 `Dockerfile` 명세:
+```PowerShell
 FROM nginx:alpine
 COPY index.html /usr/share/nginx/html/index.html
 ```
 - 빌드 성공 로그:
-```Plaintext
+```PowerShell
 PS C:\Users\poxac\Desktop\Codyssey> docker build -t my-custom-nginx .
 Sending build context to Docker daemon  1.063MB
 Step 1/2 : FROM nginx:alpine
@@ -178,8 +248,7 @@ Successfully built a817293b41ef
 Successfully tagged my-custom-nginx:latest
 ```
 
-### 호스트 포트 접속 응답(`curl` 검증)
-
+### 포스트 포트 접속 응답(`curl` 검증)
 ```PowerShell
 PS C:\Users\poxac\Desktop\Codyssey> curl.exe http://localhost:8080
 <!DOCTYPE html>
@@ -201,7 +270,8 @@ working. Further configuration is required.</p>
 </html>
 ```
 
-### 볼륨 마운트 및 컨테이너 삭제 후 데이터 지속성 검증
+### 바인드 마운트 기반 데이터 지속성 검증
+
 ```PowerShell
 PS C:\Users\poxac\Desktop\Codyssey> mkdir -p html_data
 PS C:\Users\poxac\Desktop\Codyssey> echo "Volume persist Test" > html_data/test.txt
@@ -221,6 +291,20 @@ PS C:\Users\poxac\Desktop\Codyssey> cat html_data/test.txt
 Volume persist Test
 ```
 
+### 순수 Docker 볼륨 생성 및 영속성 검증
+
+```PowerShell
+PS C:\Users\poxac\Desktop\Codyssey> docker volume create my_data_vol
+my_data_vol
+PS C:\Users\poxac\Desktop\Codyssey> docker run -d -v my_data_vol:/app/data --name vol_test_container ubuntu sleep infinity
+PS C:\Users\poxac\Desktop\Codyssey> docker exec vol_test_container bash -c "echo 'Docker Volume Test' > /app/data/test.txt"
+PS C:\Users\poxac\Desktop\Codyssey> docker rm -f vol_test_container  # 컨테이너 삭제
+
+# 새 컨테이너에서 기존 볼륨 데이터가 유지되었는지 검증
+PS C:\Users\poxac\Desktop\Codyssey> docker run --rm -v my_data_vol:/app/data ubuntu cat /app/data/test.txt
+Docker Volume Test
+```
+---
 ## 7. 트러블슈팅 사례 보고서
 
 | 단계 | 발생 사례 1(WSL 가상 머신 플랫폼 비활성화) | 발생 사례 2(PowerShell 파일 인코드 BOM 오류) |
