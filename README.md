@@ -25,6 +25,15 @@
 ### 검증 방법
 각 항목별로 터미널(PowerShell/bash)에서 필수 명령어를 직접 실행하고, 그에 대한 콘솔 출력 결과(로그)를 아래 각 목차 코드 블록 내에 기록하여 증명함.
 
+### 디렉토리 구조 및 역할 설명 (재현성 기준)
+본 저장소는 로컬 환경에 종속되지 않고 협업자 누구나 동일한 환경을 재현할 수 있도록 다음과 같은 디렉토리 구조 및 역할을 가집니다.
+
+* **`Dockerfile`**: `nginx:alpine`을 베이스로 정적 웹 콘텐츠(`index.html`)를 주입하여 커스텀 이미지를 빌드하는 명세서
+* **`index.html`**: 커스텀 웹 서버가 서빙할 메인 정적 웹 페이지 리소스
+* **`html_data/`**: 컨테이너 이미지 재빌드 없이 소스코드 수정 사항을 즉시 반영하기 위한 호스트 바인드 마운트 전용 디렉토리
+* **`practice/`**: 리눅스/파워쉘 CLI 기본 파일 조작(생성, 복사, 이름변경, 삭제) 실습을 격리하여 진행하기 위한 임시 작업 디렉토리
+* **`이미지/`**: 기술 문서 작성 및 제출에 필요한 증빙 스크린샷 보관 디렉토리
+* **재현성 기준**: 특정 로컬 절대 경로(`C:\Users\poxac\...`)에 종속되지 않도록 저장소 루트를 기준으로 상대 경로 구조를 유지하여, 타 환경에서 저장소를 클론(`git clone`)하더라도 동일하게 재현되도록 구성함.
 ---
 
 ## 2. 터미널 조작 로그 기록
@@ -82,6 +91,7 @@ d-----      2026-11-03   오후 9:26                이미지
 # 삭제
 PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> rm rename.txt empty.txt
 ```
+
 ---
 ## 3. 권한 실습 및 증거 기록
 
@@ -116,6 +126,28 @@ poxaci@POXACI:~$ chmod 700 secure_dir
 poxaci@POXACI:~$ ls -ld secure_dir
 drwx------ 2 poxaci poxaci 4096 Nov  7 21:14 secure_dir
 ```
+
+### rwx 비트와 숫자 표기법 상세 해석
+리눅스 파일 시스템은 파일/디렉토리에 대해 **소유자(User) / 소유 그룹(Group) / 기타 사용자(Others)**의 접근 권한을 3비트($2^2, 2^1, 2^0$) 8진수 체계로 관리합니다.
+
+* **각 비트의 가중치 및 의미**:
+  * **`r` (Read, 읽기)**: 가중치 $4$ ($2^2$, 이진수 `100`) — 파일 내용 조회, 디렉토리 내 파일 목록(`ls`) 확인 권한
+  * **`w` (Write, 쓰기)**: 가중치 $2$ ($2^1$, 이진수 `010`) — 파일 수정/삭제, 디렉토리 내 파일 생성/삭제 권한
+  * **`x` (Execute, 실행)**: 가중치 $1$ ($2^0$, 이진수 `001`) — 프로그램/스크립트 실행, 디렉토리 내부 접근 및 진입(`cd`) 권한
+  * **`-` (권한 없음)**: 가중치 $0$
+* **실습 숫자 표기법 분석**:
+  * **`chmod 700 secure_dir` (`drwx------`)**:
+    * 소유자(User): $4+2+1 = 7$ (`rwx`, 읽기·쓰기·접근 모두 가능)
+    * 그룹(Group): $0$ (`---`, 모든 접근 차단)
+    * 기타 사용자(Others): $0$ (`---`, 모든 접근 차단)
+    * *해석*: 작성자 본인 계정만 디렉토리에 접근하고 파일을 관리할 수 있으며, 시스템의 다른 모든 사용자는 목록 조회나 진입이 전면 차단되는 보안 격리 설정임.
+  * **`chmod 755` (`-rwxr-xr-x`)**:
+    * 소유자: $7$ (`rwx`), 그룹: $5$ ($4+0+1$, `r-x`), 기타: $5$ ($4+0+1$, `r-x`)
+    * *해석*: 소유자는 수정이 가능하고, 타 사용자는 읽고 실행만 가능한 공용 실행 파일/디렉토리 표준 권한.
+  * **`chmod 644` (`-rw-r--r--`)**:
+    * 소유자: $6$ ($4+2+0$, `rw-`), 그룹: $4$ (`r--`), 기타: $4$ (`r--`)
+    * *해석*: 일반 문서 및 정적 파일의 표준 권한.
+
 ---
 ## 4. Docker 설치 및 기본 점검
 
@@ -236,6 +268,17 @@ PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업�
 
 - `docker exec`: 이미 실행 중인 컨테이너 내부에 독립적인 새로운 프로세스(예: bash)를 생성하여 접속합니다. 작업을 마치고 exit로 빠져나와도 원래 컨테이너는 백그라운드에서 계속 유지되며 실행됩니다.
 
+### Docker 이미지 vs 컨테이너 상태 및 수명주기 비교
+이미지와 컨테이너의 구조적 차이를 빌드, 실행, 변경, 수명주기 4가지 관점으로 비교 정리함.
+
+| 비교 항목 | Docker 이미지 (Image) | Docker 컨테이너 (Container) |
+| :--- | :--- | :--- |
+| **개념** | 앱 실행에 필요한 바이너리, 라이브러리, 설정을 계층형 파일시스템으로 묶은 불변(Immutable)의 읽기 전용 템플릿 | 이미지를 인스턴스화하여 격리된 네임스페이스 하에서 실제 구동되는 독립 프로세스 |
+| **빌드 관점 (Build)** | `Dockerfile`을 읽어 읽기 전용 레이어들을 쌓아 한 번 빌드(`docker build`)하면 변경 불가능함 | 빌드 대상이 아니며, 이미지를 메모리에 로드하여 인스턴스를 생성(`docker run`)함 |
+| **실행 관점 (Run)** | 정적인 파일 묶음으로 디스크에만 저장되어 실행 자원(CPU, Memory)을 소비하지 않음 (`docker images`) | 호스트 커널 자원을 실제로 점유하며 능동적으로 명령과 네트워크 트래픽을 처리함 (`docker ps`, `docker stats`) |
+| **변경 관점 (Change)** | 소스코드 변경 시 반드시 새로운 레이어로 이미지를 다시 빌드하거나 태그를 갱신해야 함 | 실행 중 파일 수정이 가능하나, 컨테이너 삭제 시 변경 사항은 소멸됨 (휘발성) |
+| **수명주기 (Lifecycle)** | 사용자가 `docker rmi`로 명시적으로 디스크에서 삭제하기 전까지 영구 보존됨 | 생성(Create) 구동(Start)  중지(Stop)  삭제(Remove)로 이어지는 일회성 소모성 자원 |
+
 ## 7. 기존 Dockerfile 기반 커스텀 이미지 제작
 
 - 선택한 베이스 방식: (A) 웹 서버 베이스 이미지(NGINX) 활용
@@ -271,6 +314,16 @@ PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업�
  => => naming to docker.io/library/my-custom-nginx:latest                                             0.0s
  => => unpacking to docker.io/library/my-custom-nginx:latest                                          0.0s
 ```
+
+### Dockerfile 경로 선택 기준 및 재현성 권장 방식
+Dockerfile 작성 시 호스트 및 컨테이너 경로를 선택한 기준과 환경 재현성 보장 원칙은 다음과 같습니다.
+
+* **호스트 경로: 상대 경로(`index.html`) 사용 이유**
+  * 호스트 소스 파일 경로에 특정 개발자 PC의 절대 경로(`C:\Users\poxac\...`)를 명시하면 다른 개발자 PC나 CI/CD 환경에서 경로 불일치로 빌드가 실패합니다.
+  * 빌드 컨텍스트 루트를 기준으로 상대 경로를 지정해야만 어떤 환경에서 저장소를 클론하더라도 빌드 재현성이 100% 보장됩니다.
+* **컨테이너 경로: 절대 경로(`/usr/share/nginx/html/index.html`) 사용 이유**
+  * 베이스 이미지인 `nginx:alpine` 내부 웹 서버 데몬이 정적 파일을 탐색하도록 사전에 설정된 기본 루트 경로가 `/usr/share/nginx/html/` 절대 경로입니다.
+  * 컨테이너 내부는 표준 리눅스 파일 시스템을 따르므로, `WORKDIR`의 변경이나 상대 경로 해석 오류를 방지하고 설정된 목적지에 정확히 파일을 안착시키기 위해 컨테이너 경로는 반드시 절대 경로를 사용해야 합니다.
 ---
 ## 8. 포트 매핑 및 접속 증거
 
@@ -281,6 +334,43 @@ PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업�
 PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> curl.exe http://localhost:8080
 <h1>Hello from Codyssey Custom Dockerfile!</h1>
 ```
+
+### 네트워크 네임스페이스와 포트 포워딩 개념
+* **네트워크 네임스페이스(Network Namespace)**: Docker 컨테이너는 격리된 네트워크 스택(독립된 가상 IP, 라우팅 테이블, 포트 바인딩 영역)을 부여받아 실행됩니다. 호스트 OS 및 타 컨테이너와 네트워크 경계가 완벽히 차단되어 있습니다.
+* **포트 포워딩(Port Forwarding)이 필요한 이유**: 컨테이너 내부 웹 서버가 `80`번 포트에서 요청을 대기하고 있더라도 네트워크가 격리되어 있으므로 외부(호스트 웹 브라우저나 curl)에서는 컨테이너 내부 사설 IP로 직접 통신할 수 없습니다. 따라서 호스트의 특정 통로(`8080`)로 들어온 패킷을 컨테이너 내부 포트(`80`)로 라우팅해주는 포트 포워딩(`-p 8080:80`) 설정이 필수적입니다.
+
+### 포트 충돌 진단 및 포트 해제 3단계 절차
+컨테이너 실행 시 이미 사용 중인 포트로 인해 `Bind for 0.0.0.0:8080 failed: port is already allocated` 오류가 발생했을 때 해결하는 표준 진단 및 해제 절차입니다.
+
+1. **포트 점유 프로세스 식별 (PID 확인)**
+   * **PowerShell**:
+     ```powershell
+     Get-NetTCPConnection -LocalPort 8080 | Select-Object LocalAddress, LocalPort, OwningProcess, State
+     ```
+   * **Linux / WSL 터미널**:
+     ```bash
+     sudo ss -tulpn | grep :8080
+     # 또는
+     sudo lsof -i :8080
+     ```
+2. **원인 프로세스 및 기존 Docker 컨테이너 확인**
+   * Docker 컨테이너가 점유 중인지 조회:
+     ```powershell
+     docker ps --filter "publish=8080"
+     ```
+3. **충돌 해제 및 포트 회수**
+   * 원인이 Docker 컨테이너인 경우:
+     ```powershell
+     docker stop <컨테이너ID>
+     docker rm <컨테이너ID>
+     ```
+   * 원인이 일반 호스트 프로세스인 경우 (강제 종료):
+     ```powershell
+     # Windows PowerShell
+     Stop-Process -Id <확인된_PID> -Force
+     # Linux / WSL
+     sudo kill -9 <확인된_PID>
+     ```
 
 ## 9. Docker 볼륨 영속성 검증
 ```PowerShell
@@ -307,6 +397,33 @@ vol-test
 # 컨테이너 삭제 후 새 컨테이너로 연결하여 데이터 유지 증명
 PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker run --rm -v mydata:/data ubuntu cat /data/test.txt
 Persist Test
+```
+### 바인드 마운트 실습 (변경 반영 검증)
+호스트 작업 폴더(`html_data`)를 컨테이너 내부 경로(`/usr/share/nginx/html`)에 직접 연결하여, 이미지를 다시 빌드하지 않고도 소스코드 수정 사항이 즉시 웹 서버에 반영됨을 검증함.
+
+```PowerShell
+# 1. 호스트 작업 디렉토리에 마운트용 폴더 및 초기 HTML 생성
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> mkdir html_data
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> echo "<h1>Initial Mount</h1>" > html_data/index.html
+
+# 2. 호스트 절대 경로(${PWD}/html_data)를 컨테이너 웹 루트로 바인드 마운트하여 실행 (8082 포트)
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker run -d -p 8082:80 -v ${PWD}/html_data:/usr/share/nginx/html --name bind-test nginx:alpine
+c8291f09ab31cba41e97423019f6a1e39b7a42129037aef5291cb9a941620c3a
+
+# 3. 초기 상태 접속 검증
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> curl.exe http://localhost:8082
+<h1>Initial Mount</h1>
+
+# 4. 이미지 재빌드 없이 호스트 로컬에서 HTML 파일 내용 실시간 수정
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> echo "<h1>Updated without rebuild!</h1>" > html_data/index.html
+
+# 5. 브라우저/curl 재호출 시 즉시 변경 사항이 반영됨을 확인 (변경 반영 입증)
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> curl.exe http://localhost:8082
+<h1>Updated without rebuild!</h1>
+
+# 6. 실습 완료 후 바인드 컨테이너 정리
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker rm -f bind-test
+bind-test
 ```
 
 ## 10. Git 설정 및 GitHub 연동
@@ -349,4 +466,51 @@ origin  https://github.com/poxaci447/Codyssey.git (fetch)
 origin  https://github.com/poxaci447/Codyssey.git (push)
 ```
 - 연동된 GitHub 프로젝트 URL: https://github.com/poxaci447/Codyssey
+---
+
+## 11. 트러블슈팅 기록
+
+### 이슈 1: WSL 환경에서 `/mnt/c` 마운트 경로 내 `chmod` 권한 변경 미적용 문제
+ 
+* **문제 상황**:
+  * Windows 파티션 경로(`/mnt/c/Users/poxac/...`)에서 `chmod +x script.sh` 및 `chmod 700 secure_dir`를 수행했으나, `ls -l` 확인 결과 권한이 `-rwxrwxrwx`(777)로 고정되어 변하지 않음.
+* **원인 가설**:
+  * WSL 내부의 `/mnt/c`는 Windows NTFS 파일 시스템이 드라이버(DrvFs)를 통해 가상 마운트된 디렉토리이므로, 리눅스 고유의 POSIX 파일 권한 비트(rwx)가 NTFS 메타데이터에 반영되지 않고 기본 777로 고정 매핑되었을 것이다.
+* **검증 (확인)**:
+  * 순수 리눅스 네이티브 ext4 가상 디스크 영역인 홈 디렉토리(`~`)로 이동하여 동일 명령을 수행함.
+  ```bash
+  poxaci@POXACI:~$ cd ~
+  poxaci@POXACI:~$ touch test_perm.sh
+  poxaci@POXACI:~$ ls -l test_perm.sh
+  -rw-r--r-- 1 poxaci poxaci 0 Nov  7 21:10 test_perm.sh
+  poxaci@POXACI:~$ chmod 755 test_perm.sh
+  poxaci@POXACI:~$ ls -l test_perm.sh
+  -rwxr-xr-x 1 poxaci poxaci 0 Nov  7 21:10 test_perm.sh
+* 조치 및 해결:
+ 리눅스 고유의 권한 검증 및 보안 디렉토리 실습은 NTFS 마운트 경로가 아닌 리눅스 네이티브 ext4 영역(~)에서 수행하도록 작업 경로를 분리하여 정상 해결함.
+  
+### 이슈 1: WSL 환경에서 `/mnt/c` 마운트 경로 내 `chmod` 권한 변경 미적용 문제
+
+* 문제 상황:
+ docker run -it --name my-ubuntu ubuntu bash 실행 시 다음과 같은 데몬 에러가 발생하며 컨테이너 구동 실패.
+```Plaintext
+docker: Error response from daemon: Conflict. The container name "/my-ubuntu" is already in use by container "03e860dc...". You have to remove (or rename) that container to be able to reuse that name.
+```
+* 원인 가설:
+ 이전에 테스트 후 exit로 빠져나온 my-ubuntu 컨테이너가 중지(Exited)되었을 뿐 완전히 삭제되지 않고 남아 있어 이름 네임스페이스를 선점하고 있을 것이다.
+* 검증 (확인):
+ docker ps -a로 중지된 컨테이너 전체 목록을 조회하여 충돌 대상 컨테이너 존재를 확인.
+```PowerShell
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker ps -a --filter "name=my-ubuntu"
+CONTAINER ID   IMAGE     COMMAND   CREATED         STATUS                     NAMES
+03e860dc03c1   ubuntu    "bash"    5 minutes ago   Exited (0) 4 minutes ago   my-ubuntu
+```
+* 조치 및 해결:
+ 종료된 잔여 컨테이너를 강제 삭제한 뒤 정상 재실행함.
+```PowerShell
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker rm -f my-ubuntu
+my-ubuntu
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker run -it --name my-ubuntu ubuntu bash
+root@19ffecc73e9f:/# exit
+```
 ---
