@@ -9,7 +9,7 @@
 - **OS**: Windows 11 (WSL 2 Ubuntu 연동)
 - **Shell / Terminal**: Windows PowerShell 및 WSL bash
 - **Docker**: Docker version 27.2.0, build 3ae425f
-- **Git**: [본인의 git --version 결과 기입]
+- **Git**: git version 2.56.0.windows.4
 
 ### 수행 항목 체크리스트
 - [x] 터미널 기본 조작 실습 완료
@@ -90,15 +90,15 @@ PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업�
 **파일 권한 변경 (1개)**
 ```Bash
 # 변경 전
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ touch script.sh
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ ls -l script.sh
--rwxrwxrwx 1 poxaci poxaci 0 Nov  6 13:05 script.sh
+poxaci@POXACI:~$ touch script.sh
+poxaci@POXACI:~$ ls -l script.sh
+-rw-r--r-- 1 poxaci poxaci 0 Nov  7 21:10 script.sh
+
 
 # 변경 후
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ chmod +x script.sh
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ ls -l script.sh
--rwxrwxrwx 1 poxaci poxaci 0 Nov  6 13:05 script.sh
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ 
+poxaci@POXACI:~$ chmod +x script.sh
+poxaci@POXACI:~$ ls -l script.sh
+-rwxr-xr-x 1 poxaci poxaci 0 Nov  7 21:10 script.sh
 
 
 ```
@@ -106,14 +106,15 @@ poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발�
 **디렉토리 권한 변경(1개)**
 ```Bash
 # 변경 전
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ mkdir secure_dir
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ ls -ld secure_dir
-drwxrwxrwx 1 poxaci poxaci 512 Nov  6 13:07 secure_dir
+poxaci@POXACI:~$ mkdir secure_dir
+poxaci@POXACI:~$ ls -ld secure_dir
+drwxr-xr-x 2 poxaci poxaci 4096 Nov  7 21:14 secure_dir
+
 
 # 변경 후
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ chmod 700 secure_dir
-poxaci@POXACI:/mnt/c/Users/poxac/Desktop/Codyssey/E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기$ ls -id secure_dir
-15199648742403619 secure_dir
+poxaci@POXACI:~$ chmod 700 secure_dir
+poxaci@POXACI:~$ ls -ld secure_dir
+drwx------ 2 poxaci poxaci 4096 Nov  7 21:14 secure_dir
 ```
 ---
 ## 4. Docker 설치 및 기본 점검
@@ -219,22 +220,15 @@ For more examples and ideas, visit:
 ```
 ### ubuntu 컨테이너 진입 및 간단 명령
 ```PowerShell
-PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker run -it --name my-ubuntu bash
-Unable to find image 'bash:latest' locally
-latest: Pulling from library/bash
-522bcfbb914f: Pull complete 
-881fc932939e: Pull complete 
-57cec69bb0cd: Pull complete 
-2e3c11c539ac: Download complete 
-0d26fb784f3a: Download complete 
-Digest: sha256:bfe8f6d356f2944ec5ad456e44620924862263aa0717036b3c2cdce0ee4c0af0
-Status: Downloaded newer image for bash:latest
-bash-5.3# echo "Inside Ubuntu"
-Inside Ubuntu
-bash-5.3# ls
-bin    dev    etc    home   lib    media  mnt    opt    proc   root   run    sbin   srv    sys    tmp    usr    var
-bash-5.3# exit
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker run -it --name my-ubuntu ubuntu bash
+root@19ffecc73e9f:/# ls
+bin   dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  usr
+root@19ffecc73e9f:/# echo "hello~" 
+hello~
+root@19ffecc73e9f:/# exit
 exit
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> 
 ```
 
 ### 컨테이너 종료/유지(attach/exec) 차이 요약
@@ -256,33 +250,26 @@ COPY index.html /usr/share/nginx/html/index.html
 
 ### 빌드 명령 및 핵심 결과
 ```PowerShell
-+] Building 1.3s (7/7) FINISHED                                                                     docker:desktop-linux
- => [internal] load build definition from Dockerfile                                                                 0.0s
- => => transferring dockerfile: 108B                                                                                 0.0s
- => [internal] load metadata for docker.io/library/nginx:alpine                                                      0.2s
- => [internal] load .dockerignore                                                                                    0.0s
- => => transferring context: 2B                                                                                      0.0s
- => [internal] load build context                                                                                    0.0s
- => => transferring context: 89B                                                                                     0.0s
- => [1/2] FROM docker.io/library/nginx:alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed06  0.7s
- => => resolve docker.io/library/nginx:alpine@sha256:785835ea65db4bba6f021acc0f3be91b0fef76a53fe41f8588c6698d2aed06  0.0s
- => => extracting sha256:7b229517ed222597277036d94892173207d01a731ab3a88eeb1de2e963a2c788                            0.1s
- => => extracting sha256:12b85cff06fd7d383d36a9c96503fe049c9d4bf3dfda5cbb9ffa6ae99b9c07a6                            0.1s
- => => extracting sha256:657023555a2a19dc6036468198bb350d2c7feaac7f2d0a3901b4dd3cb25e40c5                            0.0s
- => => extracting sha256:7cc330898115ce55acccb0cc1e7dd091df4410c8c5f3c540710ee0ac689f5fcb                            0.0s
- => => extracting sha256:26185d08a3ec318dd85a6c9f2172e714ec13cececd7f33c533b40b1689f9fedb                            0.0s
- => => extracting sha256:2ec5fb117ffa9a78b15fb6a78745ffc569c8da0aee9f36ace4cd67a44b1fef79                            0.0s
- => => extracting sha256:9b0f7dfe35b2711a17f60dadd6d4035dc0cdee152538cc5c0987029e94679548                            0.0s
- => => extracting sha256:b9b388a21ecfde6ac80505f23f527146a2129dfb104e79b029bbd00d4cc1a919                            0.3s
- => [2/2] COPY index.html /usr/share/nginx/html/index.html                                                           0.1s
- => exporting to image                                                                                               0.2s
- => => exporting layers                                                                                              0.1s
- => => exporting manifest sha256:ef96810a14f615de5bb7e83a249bfb12cdd863d308532ef8768355d47a4a51ea                    0.0s
- => => exporting config sha256:218031292b9c8d0fbbe8f321cd47ed908a04836bff8ea348bba41b12cc4eaf25                      0.0s
- => => exporting attestation manifest sha256:abd220b8888338af079812e74c1c132b0b051c0b2928e8351beb09413bb79b3b        0.0s
- => => exporting manifest list sha256:8336ce2fbddfb571343fe1e912baa8fb6ff263fff32c4dcb9f680a03d271b2f4               0.0s
- => => naming to docker.io/library/my-custom-nginx:latest                                                            0.0s
- => => unpacking to docker.io/library/my-custom-nginx:latest  
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> docker build --no-cache -t my-custom-nginx .
+[+] Building 0.5s (7/7) FINISHED                                                       docker:desktop-linux
+ => [internal] load build definition from Dockerfile                                                  0.0s
+ => => transferring dockerfile: 108B                                                                  0.0s
+ => [internal] load metadata for docker.io/library/nginx:alpine                                       0.0s
+ => [internal] load .dockerignore                                                                     0.0s
+ => => transferring context: 2B                                                                       0.0s
+ => [internal] load build context                                                                     0.0s
+ => => transferring context: 31B                                                                      0.0s
+ => CACHED [1/2] FROM docker.io/library/nginx:alpine@sha256:78583                                     0.1s
+ => => resolve docker.io/library/nginx:alpine@sha256:785835ea65db                                     0.1s
+ => [2/2] COPY index.html /usr/share/nginx/html/index.html                                            0.0s
+ => exporting to image                                                                                0.2s
+ => => exporting layers                                                                               0.1s
+ => => exporting manifest sha256:e1324faa39c93a6a4b5ed26e99415be1                                     0.0s
+ => => exporting config sha256:8d653b805beb639558fb7595b17f7755f1                                     0.0s
+ => => exporting attestation manifest sha256:25e0c64182a3f05ca869                                     0.0s
+ => => exporting manifest list sha256:7bafd5a2669978ef96f43236da9                                     0.0s
+ => => naming to docker.io/library/my-custom-nginx:latest                                             0.0s
+ => => unpacking to docker.io/library/my-custom-nginx:latest                                          0.0s
 ```
 ---
 ## 8. 포트 매핑 및 접속 증거
@@ -322,10 +309,11 @@ PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업�
 Persist Test
 ```
 
-## Git 설정 및 GitHub 연동
+## 10. Git 설정 및 GitHub 연동
 
-### Git 사용자 정보 설정
+### Git 사용자 정보 및 환경 설정 (`git config --list`)
 ```PowerShell
+PS C:\Users\poxac\Desktop\Codyssey\E1-1. 내 컴퓨터에 개발자용 '작업실' 만들기> git config --list
 diff.astextplain.textconv=astextplain
 filter.lfs.clean=git-lfs clean -- %f
 filter.lfs.smudge=git-lfs smudge -- %f
@@ -337,18 +325,18 @@ core.fscache=true
 core.symlinks=false
 pull.rebase=false
 credential.helper=manager
-credential.https://dev.azure.com.usehttppath=true
+credential.[https://dev.azure.com.usehttppath](https://dev.azure.com.usehttppath)=true
 init.defaultbranch=master
 user.name=poxaci447
 user.email=poxaci447@gmail.com
-init.defaultbranch=main
+init.defaultbranch=main # <---- main branch
 core.repositoryformatversion=0
 core.filemode=false
 core.bare=false
 core.logallrefupdates=true
 core.symlinks=false
 core.ignorecase=true
-remote.origin.url=https://github.com/poxaci447/Codyssey.git
+remote.origin.url=[https://github.com/poxaci447/Codyssey.git](https://github.com/poxaci447/Codyssey.git)
 remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
 branch.main.remote=origin
 branch.main.merge=refs/heads/main
